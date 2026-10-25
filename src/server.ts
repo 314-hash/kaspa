@@ -101,7 +101,7 @@ export function createServer() {
       // ----------------------------------------------------
       // Static Assets Handler (Logos, SVGs, Images)
       // ----------------------------------------------------
-      if (pathname.startsWith('/assets/') && method === 'GET') {
+      if (pathname.startsWith('/assets/') && (method === 'GET' || method === 'HEAD')) {
         const cleanPath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
         const filePath = path.join(process.cwd(), 'public', cleanPath);
         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
