@@ -4,6 +4,14 @@ import { ExecutionEngine } from '../core/execution.ts';
 import { KaspaSimulatedNode, SettlementAdapter } from '../core/settlement.ts';
 import { ProofEngine } from '../core/proof.ts';
 
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch {
+    // .env file is optional
+  }
+}
+
 const BANNER = `
 \x1b[36m╔═══════════════════════════════════════════════════════════════════════╗\x1b[0m
 \x1b[36m║\x1b[0m   \x1b[1m\x1b[37mEXTROPIAN \x1b[35mJANUS\x1b[0m \x1b[32m[EXJANAI BLOCKCHAIN]\x1b[0m                             \x1b[36m║\x1b[0m
@@ -121,13 +129,19 @@ async function main() {
       break;
     }
 
+    case 'testnet-check':
     case 'mainnet-check': {
+      const isTestnet = command === 'testnet-check';
+      const networkTitle = isTestnet ? 'KASPA TESTNET-10' : 'KASPA MAINNET';
       const { MainnetPreflightChecker } = await import('../core/mainnet-readiness.ts');
-      const operatorAddress = args[1]; // optional kaspa:q... address
-      console.log('\x1b[34mℹ Running live pre-flight audit against Kaspa Mainnet (https://api.kaspa.org)...\x1b[0m\n');
-      const report = await MainnetPreflightChecker.runCheck({ operatorAddress });
+      const operatorAddress = args[1] || (isTestnet ? process.env.KASPA_TESTNET_OPERATOR_ADDRESS || process.env.KASPA_OPERATOR_ADDRESS : process.env.KASPA_OPERATOR_ADDRESS);
+      const rpcUrl = isTestnet
+        ? (process.env.KASPA_TESTNET_RPC_URL || 'https://api-tn10.kaspa.org')
+        : (process.env.KASPA_RPC_URL || 'https://api.kaspa.org');
+      console.log(`\x1b[34mℹ Running live pre-flight audit against ${networkTitle} (${rpcUrl})...\x1b[0m\n`);
+      const report = await MainnetPreflightChecker.runCheck({ operatorAddress, rpcUrl });
 
-      console.log('\x1b[1m═══ KASPA MAINNET L1 CONNECTIVITY ═══\x1b[0m');
+      console.log(`\x1b[1m═══ ${networkTitle} L1 CONNECTIVITY ═══\x1b[0m`);
       console.log(`  Network:           \x1b[32m${report.networkDetails.networkName.toUpperCase()}\x1b[0m`);
       console.log(`  Virtual BlueScore: \x1b[36m${report.networkDetails.virtualBlueScore}\x1b[0m`);
       console.log(`  DAG Block Count:   ${report.networkDetails.blockCount}`);
@@ -145,6 +159,13 @@ async function main() {
       console.log(`  Supply Conserved: \x1b[32m${report.genesisValidation.isSupplyConserved ? 'VERIFIED' : 'FAILED'}\x1b[0m`);
       console.log(`  Genesis Root R0:  ${report.genesisValidation.genesisStateRoot}`);
 
+      if (report.operatorWalletStatus) {
+        console.log(`\n\x1b[1m═══ OPERATOR WALLET (${isTestnet ? 'TESTNET-10' : 'MAINNET'}) ═══\x1b[0m`);
+        console.log(`  Address: ${report.operatorWalletStatus.address}`);
+        console.log(`  Balance: \x1b[32m${report.operatorWalletStatus.balanceKas.toFixed(4)} KAS\x1b[0m`);
+        console.log(`  Status:  ${report.operatorWalletStatus.isFundedForSettlement ? '\x1b[32m✔ FUNDED FOR SETTLEMENT\x1b[0m' : '\x1b[33m▲ UNDERFUNDED (< 0.01 KAS)\x1b[0m'}`);
+      }
+
       console.log('\n\x1b[1m═══ READINESS CHECKLIST ═══\x1b[0m');
       for (const [k, v] of Object.entries(report.readinessChecklist)) {
         const icon = v ? '\x1b[32m✔ PASS\x1b[0m' : '\x1b[33m▲ PENDING\x1b[0m';
@@ -159,9 +180,24 @@ async function main() {
       break;
     }
 
+    case 'init-genesis': {
+      const { GenesisManager } = await import('../core/genesis.ts');
+      const genConfig = GenesisManager.loadConfig();
+      const { genesisRoot, accounts } = GenesisManager.initializeGenesisState(state, genConfig);
+      console.log(`\x1b[32m✔ Initialized 100M EXJANAI Genesis State into database!\x1b[0m`);
+      console.log(`  Genesis State Root (R0): \x1b[36m${genesisRoot}\x1b[0m`);
+      console.log(`  Allocations Loaded:      ${accounts.size}`);
+      for (const [addr, acc] of accounts.entries()) {
+        const formatted = (acc.balance / (10n ** 18n)).toLocaleString();
+        console.log(`    • \x1b[1m${addr}\x1b[0m: \x1b[32m${formatted} EXJANAI\x1b[0m`);
+      }
+      break;
+    }
+
     default:
       console.log(`Available commands:`);
       console.log(`  exjanai keygen          Generate a new secp256k1 keypair`);
+      console.log(`  exjanai init-genesis    Apply config/genesis.json allocations to database`);
       console.log(`  exjanai status          Inspect L2 node status and Kaspa L1 anchor`);
       console.log(`  exjanai produce-batch   Aggregate mempool, prove, and settle batch on Kaspa L1`);
       console.log(`  exjanai account <addr>  Query account balance and nonce`);

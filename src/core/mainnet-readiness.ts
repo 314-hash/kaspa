@@ -55,7 +55,11 @@ export class MainnetPreflightChecker {
     operatorAddress?: string;
     genesisPath?: string;
   } = {}): Promise<MainnetReadinessReport> {
-    const rpcUrl = options.rpcUrl || 'https://api.kaspa.org';
+    if (typeof process.loadEnvFile === 'function') {
+      try { process.loadEnvFile(); } catch { /* optional */ }
+    }
+    const rpcUrl = options.rpcUrl || process.env.KASPA_RPC_URL || 'https://api.kaspa.org';
+    const operatorAddress = options.operatorAddress || process.env.KASPA_OPERATOR_ADDRESS;
     const genesisPath = options.genesisPath || path.join(process.cwd(), 'config', 'genesis.json');
     const recommendations: string[] = [];
 
@@ -138,25 +142,33 @@ export class MainnetPreflightChecker {
 
     // 4. Operator Wallet Check if provided
     let operatorStatus: MainnetReadinessReport['operatorWalletStatus'] | undefined;
-    if (options.operatorAddress) {
+    let cleanAddress = operatorAddress?.trim();
+    if (cleanAddress) {
+      cleanAddress = cleanAddress.replace(/^(kaspa:)+/i, 'kaspa:').replace(/^(kaspatest:)+/i, 'kaspatest:');
+      if (!cleanAddress.startsWith('kaspa:') && !cleanAddress.startsWith('kaspatest:')) {
+        cleanAddress = `kaspa:${cleanAddress}`;
+      }
+    }
+
+    if (cleanAddress) {
       try {
-        const balRes = await safeFetch(`${rpcUrl}/addresses/${options.operatorAddress}/balance`);
+        const balRes = await safeFetch(`${rpcUrl}/addresses/${cleanAddress}/balance`);
         if (balRes.status === 200) {
           const balData = balRes.json<{ balance?: number }>();
           const balanceSompi = balData.balance || 0;
           const balanceKas = balanceSompi / 100_000_000;
           operatorStatus = {
-            address: options.operatorAddress,
+            address: cleanAddress,
             balanceKas,
             utxoCount: 1,
-            isFundedForSettlement: balanceKas >= 1.0,
+            isFundedForSettlement: balanceKas >= 0.01,
           };
           if (balanceKas < 1.0) {
-            recommendations.push(`Operator address has only ${balanceKas.toFixed(4)} KAS. Recommended: >= 2.0 KAS for continuous anchoring.`);
+            recommendations.push(`Operator address has ${balanceKas.toFixed(4)} KAS. Recommended: >= 2.0 KAS for continuous anchoring (~473 batches per 1 KAS).`);
           }
         }
       } catch {
-        recommendations.push(`Could not query balance for operator address ${options.operatorAddress}`);
+        recommendations.push(`Could not query balance for operator address ${cleanAddress}`);
       }
     } else {
       recommendations.push('No mainnet operator address specified. Settlement will operate in simulation mode until configured.');

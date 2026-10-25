@@ -11,6 +11,7 @@
     "cli": "node src/cli/index.ts",
     "chaincheck": "node src/cli/chaincheck-cli.ts",
     "intel": "node src/cli/intel-cli.ts",
+    "testnet:preflight": "node src/cli/index.ts testnet-check",
     "mainnet:preflight": "node src/cli/index.ts mainnet-check",
     "prototype:demo": "node scripts/run_e2e_prototype.ts"
   },
