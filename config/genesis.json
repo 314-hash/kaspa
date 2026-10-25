@@ -1,0 +1,33 @@
+{
+  "network": "exjanai-testnet",
+  "chainId": 1111,
+  "nativeToken": {
+    "name": "Extropian Janus",
+    "symbol": "EXJANAI",
+    "decimals": 18,
+    "totalSupply": "100000000000000000000000000"
+  },
+  "allocations": [
+    {
+      "label": "Ecosystem & Testnet Faucet",
+      "address": "0x1111111111111111111111111111111111111111",
+      "amount": "40000000000000000000000000"
+    },
+    {
+      "label": "Protocol Treasury & Development",
+      "address": "0x2222222222222222222222222222222222222222",
+      "amount": "30000000000000000000000000"
+    },
+    {
+      "label": "L1 Settlement Liquidity Reserve",
+      "address": "0x3333333333333333333333333333333333333333",
+      "amount": "20000000000000000000000000"
+    },
+    {
+      "label": "Community Validation & Diagnostics Bounty",
+      "address": "0x4444444444444444444444444444444444444444",
+      "amount": "10000000000000000000000000"
+    }
+  ],
+  "genesisTimestamp": 1729850000000
+}
