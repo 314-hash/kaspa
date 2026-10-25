@@ -15,11 +15,19 @@ import { IntelligenceCollector, VERIFIED_SEED_DATA } from './products/intelligen
 import { MonetizationAdapter } from './products/monetization/adapter.ts';
 import { generateKeyPair, signTransaction } from './core/crypto.ts';
 import { ProofEngine } from './core/proof.ts';
+import { GenesisManager } from './core/genesis.ts';
 import type { ExJanAITransaction, ChainCheckTarget } from './types/index.ts';
 
 // Initialize core components
 const stateManager = new StateManager({ dbPath: './data/exjanai.db' });
 const operatorKey = generateKeyPair();
+
+// Initialize 100M EXJANAI Genesis State if empty
+const genesisConfig = GenesisManager.loadConfig();
+const existingFaucet = stateManager.getAccount(genesisConfig.allocations[0].address);
+if (existingFaucet.balance === 0n) {
+  GenesisManager.initializeGenesisState(stateManager, genesisConfig);
+}
 
 const engine = new ExecutionEngine(stateManager, {
   chainId: 1111,
@@ -45,16 +53,6 @@ if (intelStore.getCount() === 0) {
     intelStore.upsertItem(item);
   }
 }
-
-// Seed initial test account with balance for interactive explorer demos
-const demoFaucet = generateKeyPair();
-stateManager.setAccount({
-  address: demoFaucet.address,
-  nonce: 0,
-  balance: 50_000_000_000n,
-  storageRoot: '0'.repeat(64),
-  updatedAt: Date.now(),
-});
 
 const serializeBigInt = (obj: unknown) =>
   JSON.stringify(obj, (_, v) => (typeof v === 'bigint' ? v.toString() : v));

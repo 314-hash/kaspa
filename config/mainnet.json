@@ -1,0 +1,24 @@
+{
+  "network": "kaspa-mainnet",
+  "chainId": 1111,
+  "l1": {
+    "networkName": "mainnet",
+    "restRpcUrl": "https://api.kaspa.org",
+    "wrpcUrl": "wss://api.kaspa.org/wrpc",
+    "targetConfirmationBlueScore": 120,
+    "maxFeeRateSompiPerGram": 2.0,
+    "payloadPrefix": "EXJA",
+    "version": 1
+  },
+  "l2": {
+    "name": "Extropian Janus Layer 2",
+    "nativeToken": "EXJANAI",
+    "totalSupply": "100000000000000000000000000",
+    "maxBatchSize": 500,
+    "blockTimeSeconds": 1,
+    "provingScheme": "TRACE_COMMITMENT_V1",
+    "zkPrecompileTarget": "KIP-16"
+  },
+  "settlementMode": "STATE_COMMITMENT_ANCHOR",
+  "minOperatorBalanceKas": 5.0
+}
