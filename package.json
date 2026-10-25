@@ -1,0 +1,27 @@
+{
+  "name": "exjanai-blockchain",
+  "version": "0.1.0",
+  "description": "ExJanAI Blockchain — Proposed Kaspa-Integrated Layer 2 Prototype, ChainCheck Diagnostics, and Intelligence Monitor",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "node --test tests/**/*.test.ts",
+    "test:coverage": "node --test --experimental-test-coverage tests/**/*.test.ts",
+    "start": "node src/server.ts",
+    "cli": "node src/cli/index.ts",
+    "chaincheck": "node src/cli/chaincheck-cli.ts",
+    "intel": "node src/cli/intel-cli.ts",
+    "prototype:demo": "node scripts/run_e2e_prototype.ts"
+  },
+  "keywords": [
+    "exjanai",
+    "kaspa",
+    "layer2",
+    "rollup",
+    "blockchain",
+    "chaincheck",
+    "diagnostics"
+  ],
+  "author": "ExJanAI Core Engineering",
+  "license": "Apache-2.0"
+}
